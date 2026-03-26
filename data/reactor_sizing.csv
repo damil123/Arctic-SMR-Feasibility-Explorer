@@ -1,0 +1,6 @@
+community,province,population,lat,lon,zone,primary_fuel,daily_kwh_demand,baseline_mw,winter_renew_mw,demand_mw,nuclear_gap_mw,reactor_mw,evinci_units,tech_class
+"Iqaluit, NU",Nunavut,7429,63.75,-68.51,High Arctic,Diesel,260015,10833.958,0.039,10.833958,10.794958000000001,14.03,3,SMR required (>10 MWe)
+"Inuvik, NT",Northwest Terr.,3243,68.36,-133.72,High Arctic,Diesel/Gas,113505,4729.375,0.039,4.729375,4.690375,6.1,2,Micro-reactor (<=10 MWe)
+"Resolute, NU",Nunavut,208,74.69,-94.97,High Arctic,Diesel,7280,303.333,0.039,0.303333,0.26433300000000004,0.34,1,Micro-reactor (<=10 MWe)
+"Yellowknife, NT",Northwest Terr.,20340,62.45,-114.37,Subarctic,Hydro/Diesel,711900,29662.5,0.2,29.6625,29.462500000000002,38.3,8,SMR required (>10 MWe)
+"Whitehorse, YT",Yukon,28201,60.72,-135.05,Subarctic,Hydro/Diesel,987035,41126.458,0.2,41.126458,40.926458,53.2,11,SMR required (>10 MWe)
