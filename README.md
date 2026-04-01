@@ -13,13 +13,13 @@ Five remote Northern Canadian communities are almost entirely dependent on diese
 | Problem | Magnitude |
 |---|---|
 | **Cost** | $0.62–0.68/kWh in Nunavut — four to six times the ~$0.10–0.15/kWh paid in southern Canada |
-| **Emissions** | 780 g CO₂e/kWh — among the highest electricity carbon intensity in Canada |
+| **Emissions** | 780 g CO₂e/kWh  among the highest electricity carbon intensity in Canada |
 | **Subsidy burden** | Federal and territorial diesel subsidies exceed $60M/year in Nunavut alone |
 | **Logistics risk** | Diesel delivered by summer barge or winter road; supply chain disruption cuts power entirely |
 
 This project answers one question using publicly available data: **Can renewables close the gap, and if not, what size micro-reactor does each community need?**
 
-Using 10 years of NASA POWER satellite climate data (2015–2024) and Statistics Canada census figures, this analysis models what solar panels and wind turbines can actually produce at 68°N — representative of Nunavut and the Northwest Territories — compared to what communities need. The result: **solar and wind together never supply more than 7% of community demand in any month, across any year studied.** The gap does not close in summer. Nuclear is not a backup — it is the only viable primary power source at this latitude, year-round.
+Using 10 years of NASA POWER satellite climate data (2015–2024) and Statistics Canada census figures, this analysis models what solar panels and wind turbines can actually produce at 68°N  representative of Nunavut and the Northwest Territories  compared to what communities need. The result: **solar and wind together never supply more than 7% of community demand in any month, across any year studied.** The gap does not close in summer. Nuclear is not a backup  it is the only viable primary power source at this latitude, year-round.
 
 | Component | What It Does |
 |---|---|
@@ -33,12 +33,12 @@ Using 10 years of NASA POWER satellite climate data (2015–2024) and Statistics
 
 ## Key Findings
 
-1. **Solar and wind cover 4–7% of demand year-round — never enough** — at 68°N, the best renewable output ever recorded in 10 years of data was 6.9% of community demand (May). In winter it falls to 3.5–4%. There is no season where renewables come close to serving as a primary power source. The gap is a physical feature of latitude, not a weather pattern (RERS range across full dataset: 0.026–0.086)
-2. **Wind cannot fill the gap that solar leaves** — turbines face blade icing below −30°C (recorded Jan–Feb lows of −35.9°C at 68°N); even when both solar and wind run at their seasonal best, combined output is 0.069 MW per 1 MW of community demand — 93% still unmet
-3. **Nuclear is the only viable baseload option** — a firm, continuous power source is required in every month of the year, not just winter; micro-reactors in the 0.34–14 MWe range cover communities from 208 to 7,429 people
-4. **Reactor sizing:** Resolute (208 people) needs 0.34 MWe / 1 Westinghouse eVinci unit; Inuvik (3,243 people) needs 6.10 MWe / 2 units; Iqaluit (7,429 people) needs 14.03 MWe / 3 units
-5. **The highest-rated risks are solved by nuclear, not created by it** — 3 of 7 energy supply risks score Critical (15–25/25); all three (polar night blackout, turbine icing, diesel resupply failure) are directly eliminated by micro-reactor deployment
-6. **The economic case is clear** — replacing diesel with nuclear saves a combined $66.9M/yr and avoids 295.5 kt CO₂e annually across four communities; Iqaluit alone saves $35.1M/yr — more than Canada's entire annual Nunavut diesel subsidy (see Chart 5)
+1. Solar and wind at 68°N supply between 3.5% and 6.9% of community demand depending on the month — never enough to serve as a primary power source in any season; this is a permanent physical feature of high-latitude geography, confirmed across 10 years of data
+2. There is no combination of solar, wind, and battery storage that can bridge a 93–97% energy gap; nuclear baseload is not one option among several — it is the only viable option at this latitude
+3. The Westinghouse eVinci (5 MWe, 8+ year refueling, transport-portable by truck or air) is the right technology for Arctic logistics: no year-round road access, all resupply by sealift or air, and annual diesel delivery now made obsolete
+4. Resolute (1 eVinci unit, 0.34 MWe) is the lowest-risk first deployment; Inuvik (2 units) follows; Iqaluit (3 units) is the highest-visibility Nunavut market
+5. Replacing diesel with nuclear saves a combined $66.9M/yr and avoids 295.5 kt of CO₂ emissions annually across four communities — more than Canada currently spends on Nunavut diesel subsidies in a year
+6. Every Arctic SMR deployment builds engineering heritage applicable to defence forward operating bases and space surface power programmes
 
 ---
 
@@ -121,10 +121,3 @@ Then update the `pd.read_csv()` path in the notebook.
 
 **Key limitations:** single-coordinate climate analysis; simplified wind model (no terrain/icing probability); static demand model (no hourly/seasonal variation); no battery storage sizing.
 
----
-
-## Resume Bullet Points
-
-- Engineered a Python-based energy reliability model (RERS metric) using 10 years of NASA POWER and Statistics Canada data to quantify Arctic renewable energy gaps across 5 Northern Canadian communities, finding nuclear baseload is required year-round (RERS never exceeds 6.9% in any month)
-- Developed a micro-reactor sizing model and 7-risk energy supply register identifying 3 Critical scenarios, recommending Westinghouse eVinci configurations from 1–3 units (0.34–14.03 MWe) for priority High Arctic communities, with 30% safety margins
-- Quantified the economic and environmental case: $66.9M/yr in combined savings over diesel costs and 295.5 kt CO₂e/yr avoided across four communities; synthesized findings into a stakeholder-ready technical report, 5 publication-quality charts, and a documented risk matrix supporting the case for SMR deployment in remote Arctic communities

@@ -8,7 +8,7 @@
 
 ## Objective
 
-Five remote Northern Canadian communities depend almost entirely on diesel generation — at $0.62–0.68/kWh (four to six times southern Canadian rates), 780 g CO₂e/kWh, and over $60M/year in federal and territorial subsidies. Diesel is also delivered by summer barge or winter road, making supply chain disruptions a direct power security risk.
+Five remote Northern Canadian communities depend almost entirely on diesel generation  at $0.62–0.68/kWh (four to six times southern Canadian rates), 780 g CO₂e/kWh, and over $60M/year in federal and territorial subsidies. Diesel is also delivered by summer barge or winter road, making supply chain disruptions a direct power security risk.
 
 **Central question:** Can renewables close the gap, and if not, what size micro-reactor does each community need?
 
