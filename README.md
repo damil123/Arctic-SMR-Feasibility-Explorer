@@ -4,8 +4,8 @@ Interactive tool that takes **any Arctic or subarctic coordinate (50–84°N)** 
 one question: can a community here run on renewables, or does the climate force a nuclear
 baseload? It pulls a 10-year climate record for the point (Open-Meteo ERA5, with NASA POWER
 as a cross-check), falls back to a trained ML surrogate if both are offline, scores
-micro-reactor feasibility, and explains the verdict with charts, siting flags, and an ML
-confidence estimate.
+micro-reactor feasibility, runs a scalable solar+wind+battery+baseload energy model with
+cost/CO2 economics, and explains the verdict with location-responsive charts and siting flags.
 
 ## Run it
 ```bash
@@ -25,6 +25,7 @@ dashboard/
 ├── app.py                     Streamlit UI
 ├── physics.py                 constants + FAO-56 solar geometry (shared)
 ├── feasibility.py             transparent scoring + verdict
+├── energy_model.py            hybrid PV+wind+battery balance + LCOE/CO2 economics
 ├── inference.py               model loading, prediction, uncertainty, classification
 ├── openmeteo.py               live Open-Meteo (ERA5) client  ← primary data source
 ├── nasa_power.py              live NASA POWER client (cross-check)

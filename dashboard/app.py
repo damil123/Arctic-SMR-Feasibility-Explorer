@@ -1,11 +1,11 @@
 """
 app.py — Arctic Micro-Reactor Feasibility Explorer (Streamlit).
 
-Enter any Arctic / subarctic coordinate (or pick a community). The app pulls a
-10-year monthly climatology for that point — Open-Meteo (ERA5) first, NASA POWER
-as a cross-check, and a trained ML surrogate if both are unreachable — scores
-micro-reactor feasibility, and explains the verdict with charts, siting flags,
-and an ML confidence estimate.
+Pick any Arctic / subarctic coordinate. The app pulls a 10-year monthly climatology
+(Open-Meteo ERA5, NASA POWER cross-check, ML surrogate fallback), screens micro-
+reactor feasibility, then runs a scalable solar+wind+battery+baseload energy model
+with economics so the renewable penetration, cost comparison, and charts respond to
+the actual location and system design.
 
 Run:  streamlit run app.py
 """
@@ -20,11 +20,11 @@ import feasibility as fz
 import inference as inf
 import nasa_power as npw
 import openmeteo as om
+import energy_model as em
 
 st.set_page_config(page_title='Arctic Micro-Reactor Feasibility',
                    page_icon='*', layout='wide')
 
-# ── Theme ────────────────────────────────────────────────────────────────────
 DARK, PANEL, ACCENT = '#0A0E14', '#0F1820', '#60D5F5'
 RED, AMBER, GREEN = '#FF4D4D', '#F5A623', '#C8F560'
 plt.rcParams.update({
@@ -77,8 +77,6 @@ def _finalize(d):
 
 @st.cache_data(show_spinner=False)
 def get_climate(lat, lon, source):
-    """Return (DataFrame, source_label) with per-month solar/wind/temp + derived
-    solar_mw/wind_mw/RERS. Tries live sources per selection, falls back to ML."""
     df, used = None, None
     if source in (SRC_AUTO, SRC_OM):
         d = om.fetch_climatology(lat, lon)
@@ -105,21 +103,36 @@ plat, plon = PRESETS[preset]
 lat = st.sidebar.number_input('Latitude (deg N)', 50.0, 84.0, float(plat), 0.1)
 lon = st.sidebar.number_input('Longitude (deg E, west = negative)', -180.0, 180.0, float(plon), 0.1)
 source = st.sidebar.radio('Climate data source', [SRC_AUTO, SRC_OM, SRC_NASA, SRC_ML])
-pop = st.sidebar.number_input('Community population (optional - for reactor sizing)',
-                              0, 200000, 0, 50)
-st.sidebar.caption('Domain: 50-84 deg N. Live data from Open-Meteo (ERA5) or NASA POWER; '
-                   'the ML surrogate (calibrated to NASA POWER) is the instant/offline fallback.')
+pop = st.sidebar.number_input('Community population (0 = use 1 MW reference)', 0, 200000, 1000, 50)
 
-# ── Compute ──────────────────────────────────────────────────────────────────
+with st.sidebar.expander('Energy system design'):
+    pv_mult = st.slider('Solar PV capacity (x avg load)', 0.0, 6.0, 3.0, 0.5)
+    wind_mult = st.slider('Wind capacity (x avg load)', 0.0, 4.0, 1.5, 0.5)
+    batt_hours = st.slider('Battery autonomy (hours)', 0, 72, 12, 4)
+with st.sidebar.expander('Economics ($/kWh)'):
+    diesel_kwh = st.slider('Diesel LCOE', 0.30, 1.00, 0.60, 0.01)
+    nuclear_kwh = st.slider('Nuclear LCOE', 0.15, 0.60, 0.25, 0.01)
+    renew_kwh = st.slider('Renewables + storage LCOE', 0.04, 0.30, 0.09, 0.01)
+
+# ── Compute: climate + feasibility ───────────────────────────────────────────
 df, used = get_climate(round(lat, 2), round(lon, 2), source)
 res = fz.score_location(df['solar_kwh_m2_day'].values, df['wind_ms'].values, df['temp_c'].values)
 clf_label, clf_proba = inf.classify_location(df)
 clf_conf = max(clf_proba.values())
 
+# ── Compute: energy system + economics ───────────────────────────────────────
+demand_mw = ph.demand_mw(pop) if pop > 0 else ph.BASELINE_MW
+avg_kw = demand_mw * 1000
+sim = em.simulate_hybrid(df['solar_kwh_m2_day'].values, df['wind_ms'].values, demand_mw,
+                         pv_kw=pv_mult * avg_kw, wind_kw=wind_mult * avg_kw,
+                         battery_mwh=batt_hours * demand_mw)
+eco = em.economics(sim, diesel_lcoe=diesel_kwh * 1000, nuclear_lcoe=nuclear_kwh * 1000,
+                   renew_lcoe=renew_kwh * 1000)
+
 # ── Header + verdict ─────────────────────────────────────────────────────────
 st.title('Arctic Micro-Reactor Feasibility Explorer')
 st.markdown('<span class="sub">Can a community at this coordinate rely on renewables - '
-            'or does the climate force a nuclear baseload? Real climate data + ML scoring.</span>',
+            'or does the climate force a nuclear baseload? Real climate data + ML + energy model.</span>',
             unsafe_allow_html=True)
 
 color = VERDICT_COLOR[res['verdict']]
@@ -131,7 +144,6 @@ st.markdown(
     unsafe_allow_html=True)
 st.write('')
 
-# ── KPI row ──────────────────────────────────────────────────────────────────
 k = st.columns(5)
 k[0].metric('Peak monthly RERS', f"{res['peak_rers']*100:.1f}%",
             help='Best-month renewable share of a 1 MW demand. Below 40% = renewables cannot be primary.')
@@ -140,35 +152,65 @@ k[2].metric('Mean annual temp', f"{res['annual_temp']:.1f} C")
 k[3].metric('Coldest month', f"{res['min_temp']:.0f} C")
 k[4].metric('Polar-night months', f"{res['polar_night_months']}")
 
-# ── Reactor sizing (optional) ────────────────────────────────────────────────
+# ── Energy system & economics ────────────────────────────────────────────────
+st.subheader('Energy system & economics')
+demand_note = (f"{pop:,} people -> {demand_mw:.2f} MW avg demand" if pop > 0
+               else "no population set -> 1 MW reference demand")
+st.markdown(f'<span class="sub">System: {pv_mult:g}x PV + {wind_mult:g}x wind + '
+            f'{batt_hours}h battery, sized to {demand_note}.</span>', unsafe_allow_html=True)
+
+e = st.columns(4)
+e[0].metric('Renewable penetration', f"{sim['penetration']*100:.0f}%",
+            help='Share of annual demand met by solar+wind+storage in this design.')
+e[1].metric('Winter (worst month)', f"{sim['worst_month_penetration']*100:.0f}%",
+            help='Renewable share in the worst month - why firm baseload is still required.')
+e[2].metric('Firm power still needed', f"{sim['annual_firm_mwh']:,.0f} MWh/yr")
+best_name, best_cost = eco['best_option']
+e[3].metric('Cheapest option', best_name, help=f"${best_cost:.1f}M/yr")
+
 if pop > 0:
     floor = df[df.month.isin([11, 12, 1, 2])][['solar_mw', 'wind_mw']].sum(axis=1).mean()
-    sizing = ph.size_reactor(ph.demand_mw(pop), floor)
-    st.info(f"**Reactor sizing for {pop:,} people** - average demand "
-            f"{ph.demand_mw(pop):.2f} MW; winter renewable floor {floor:.3f} MW -> "
+    sizing = ph.size_reactor(demand_mw, floor)
+    st.info(f"**Reactor sizing** - to firm {demand_mw:.2f} MW demand: "
             f"**{sizing['reactor_mw']} MWe** ({sizing['evinci_units']}x eVinci, "
-            f"{sizing['tech_class']}), incl. 30% safety margin.")
+            f"{sizing['tech_class']}), incl. 30% safety margin. "
+            f"Nuclear vs diesel saves ~${eco['diesel_saving_vs_nuclear_m']:.1f}M/yr and "
+            f"avoids ~{eco['co2_avoided_nuclear_kt']:.1f} kt CO2/yr.")
 
-# ── Charts ───────────────────────────────────────────────────────────────────
-c1, c2 = st.columns(2)
 x = df['month'].values
-
-with c1:
-    st.markdown('**Seasonal energy gap** - renewables vs 1 MW demand')
+g1, g2 = st.columns(2)
+with g1:
+    st.markdown('**Monthly energy balance** - renewables served vs firm power needed')
     fig, ax = plt.subplots(figsize=(6, 3.6))
-    ax.fill_between(x, 0, df['solar_mw'], color='#F5A623', alpha=0.9, label='Solar MW')
-    ax.fill_between(x, df['solar_mw'], df['solar_mw'] + df['wind_mw'], color=ACCENT,
-                    alpha=0.85, label='+ Wind MW')
-    ax.fill_between(x, df['solar_mw'] + df['wind_mw'], ph.BASELINE_MW, color=RED,
-                    alpha=0.20, label='Nuclear gap')
-    ax.axhline(ph.BASELINE_MW, color=RED, ls='--', lw=1.5)
+    rs = sim['renewable_served_mwh']
+    fn = sim['firm_needed_mwh']
+    ax.bar(x, rs, color=GREEN, alpha=0.85, label='Renewables + storage')
+    ax.bar(x, fn, bottom=rs, color=RED, alpha=0.7, label='Firm (diesel/nuclear)')
+    ax.plot(x, sim['load_mwh'], color='#DDE3EE', lw=1.2, ls='--', label='Demand')
     ax.set_xticks(x); ax.set_xticklabels(ph.MONTH_NAMES, fontsize=7)
-    ax.set_ylim(0, 1.15); ax.set_ylabel('MW'); ax.legend(fontsize=7, facecolor=PANEL)
+    ax.set_ylabel('MWh / month'); ax.legend(fontsize=7, facecolor=PANEL)
     st.pyplot(fig); plt.close(fig)
 
-with c2:
-    st.markdown('**Monthly RERS vs 40% nuclear threshold**')
+with g2:
+    st.markdown('**Annual cost by system option** ($M/yr)')
     fig, ax = plt.subplots(figsize=(6, 3.6))
+    opts = ['Diesel\nonly', 'Renew +\ndiesel', 'Nuclear\nbaseload', 'Renew +\nnuclear']
+    vals = [eco['diesel_only']['cost_m'], eco['hybrid_diesel']['cost_m'],
+            eco['nuclear']['cost_m'], eco['hybrid_nuclear']['cost_m']]
+    barcols = [RED, AMBER, ACCENT, GREEN]
+    bars = ax.bar(opts, vals, color=barcols, alpha=0.85)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width()/2, v, f'${v:.1f}M', ha='center', va='bottom',
+                fontsize=8, color='#DDE3EE')
+    ax.set_ylabel('$M / year'); ax.set_ylim(0, max(vals) * 1.18)
+    st.pyplot(fig); plt.close(fig)
+
+# ── Feasibility detail charts ────────────────────────────────────────────────
+st.subheader('Feasibility detail')
+c1, c2 = st.columns(2)
+with c1:
+    st.markdown('**Monthly RERS vs 40% nuclear threshold**')
+    fig, ax = plt.subplots(figsize=(6, 3.4))
     cols = [GREEN if v >= ph.NUCLEAR_THRESHOLD else RED for v in df['RERS']]
     ax.bar(x, df['RERS'], color=cols, alpha=0.85)
     ax.axhline(ph.NUCLEAR_THRESHOLD, color=AMBER, ls=':', lw=1.5, label='40% threshold')
@@ -176,11 +218,9 @@ with c2:
     ax.set_ylim(0, max(0.45, df['RERS'].max() * 1.2)); ax.set_ylabel('RERS')
     ax.legend(fontsize=7, facecolor=PANEL)
     st.pyplot(fig); plt.close(fig)
-
-c3, c4 = st.columns(2)
-with c3:
+with c2:
     st.markdown('**Temperature climatology**')
-    fig, ax = plt.subplots(figsize=(6, 3.2))
+    fig, ax = plt.subplots(figsize=(6, 3.4))
     ax.plot(x, df['temp_c'], color=ACCENT, marker='o', lw=1.5)
     if 'temp_std' in df:
         ax.fill_between(x, df['temp_c'] - df['temp_std'], df['temp_c'] + df['temp_std'],
@@ -190,7 +230,8 @@ with c3:
     ax.set_xticks(x); ax.set_xticklabels(ph.MONTH_NAMES, fontsize=7); ax.set_ylabel('C')
     st.pyplot(fig); plt.close(fig)
 
-with c4:
+c3, c4 = st.columns(2)
+with c3:
     st.markdown('**Why this verdict** - score components')
     comp = res['components']
     labels = {'renewable_insufficiency': 'Renewable insufficiency (x0.45)',
@@ -199,9 +240,10 @@ with c4:
     for key, lab in labels.items():
         st.caption(lab)
         st.progress(float(comp[key]))
+with c4:
+    st.markdown('**Location**')
     st.map(pd.DataFrame({'lat': [lat], 'lon': [lon]}), zoom=2, size=40000)
 
-# ── Siting flags ─────────────────────────────────────────────────────────────
 st.subheader('Siting & engineering flags')
 if res['flags']:
     for fl in res['flags']:
@@ -209,8 +251,8 @@ if res['flags']:
 else:
     st.success('No major cold/permafrost siting flags at this location.')
 
-st.caption('Verdict combines renewable insufficiency (best-month RERS vs the 40% threshold), '
-           'climate demand pressure (mean annual temperature), and siting suitability '
-           '(permafrost + extreme-cold penalties). Reactor sizing uses the eVinci 5 MWe '
-           'reference and a 30% safety margin. Live data: Open-Meteo ERA5 or NASA POWER; '
-           'offline/instant: ML surrogate trained on a NASA-calibrated circumpolar grid.')
+st.caption('Energy model: scalable PV + wind + battery sized to demand, monthly balance with '
+           'storage shifting; firm power covers the residual. Economics compare diesel, nuclear, '
+           'and hybrids at the LCOEs set in the sidebar. Feasibility verdict combines renewable '
+           'insufficiency, climate demand pressure, and permafrost/extreme-cold siting penalties. '
+           'Live data: Open-Meteo ERA5 / NASA POWER; offline: ML surrogate.')

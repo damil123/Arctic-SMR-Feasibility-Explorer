@@ -99,3 +99,16 @@ Feasibility is a screening signal — it omits grid connection, demand beyond th
 NRCan per-person model, regulatory/waste/decommissioning factors, and bathymetry/
 transport access. The live NASA tier removes the climate-model assumption for any
 specific point the user queries.
+
+## Energy model & economics (energy_model.py)
+The original RERS/1-MW comparison was a fixed toy (one array + one turbine), so every
+location looked identical. `energy_model.py` replaces it with a scalable system sized to
+the community's demand:
+- **PV** from irradiance x capacity x performance ratio; **wind** from a power-curve
+  capacity factor; **battery** shifts surplus to deficit (one cycle/day, monthly resolution).
+- Outputs **renewable penetration**, worst-month (winter) penetration, and residual firm
+  power - all of which vary by location and by the PV/wind/battery sliders.
+- **Economics** compare four options (diesel only, renewables+diesel, nuclear baseload,
+  renewables+nuclear) on $/yr and CO2, at user-set LCOEs. Typical result: a renewables+
+  nuclear hybrid is cheapest, because renewables are cheap but winter forces firm baseload.
+

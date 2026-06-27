@@ -4,7 +4,8 @@ Interactive Streamlit tool that takes **any Arctic or subarctic coordinate (50�
 and answers one question: can a community here run on renewables, or does the climate
 force a nuclear baseload? It pulls a 10-year climate record for the point (Open-Meteo ERA5,
 with NASA POWER as a cross-check), falls back to a trained ML surrogate if both are offline, scores micro-reactor
-feasibility, and explains the verdict with charts, siting flags, and an ML confidence.
+feasibility, runs a scalable solar+wind+battery+baseload energy model with cost/CO₂ economics,
+and explains the verdict with location-responsive charts, siting flags, and an ML confidence.
 
 This generalises the fixed five-community study in `../analysis.ipynb` into a
 point-and-score tool. The energy physics (RERS, the 40% renewable threshold, eVinci
@@ -13,11 +14,11 @@ point-and-score tool. The energy physics (RERS, the 40% renewable threshold, eVi
 ## What it shows
 - **Verdict** — Strong / Conditional / Weak case for a micro-reactor, with a 0–100 score.
 - **ML cross-check** — an independent classifier verdict and confidence.
-- **KPIs** — peak & annual RERS, mean annual and coldest-month temperature, polar-night months.
-- **Charts** — seasonal energy gap (renewables vs 1 MW demand), monthly RERS vs the 40% line, temperature climatology with ML uncertainty band, and a score-component breakdown.
-- **Siting flags** — permafrost and extreme-cold engineering cautions.
-- **Reactor sizing** — optional: enter a population to get the recommended MWe / eVinci unit count.
-- **Map** of the queried point.
+- **Energy system** — renewable penetration, worst-month (winter) penetration, and residual firm power for a solar+wind+battery build you size with sliders.
+- **Economics** — annual cost ($M/yr) and CO₂ for four options (diesel, renewables+diesel, nuclear, renewables+nuclear) at LCOEs you set; flags the cheapest.
+- **Reactor sizing** — recommended MWe / eVinci unit count, plus savings and CO₂ avoided vs diesel.
+- **Charts** — monthly energy balance (renewables vs firm), cost comparison, monthly RERS vs the 40% line, temperature climatology with ML uncertainty band, score components.
+- **Siting flags** — permafrost and extreme-cold engineering cautions, and a map of the point.
 
 ## Quick start
 ```bash
@@ -45,6 +46,9 @@ The repo already ships the trained models (`models/`), so step 3 alone runs the 
    (mean annual temperature), and siting suitability (permafrost + extreme-cold penalties).
 4. **Classifier** — a second RandomForest reproduces the rule and supplies a calibrated
    confidence; the app shows the rule score and the model's confidence side by side.
+5. **Energy model** — `energy_model.py` sizes a solar+wind+battery system to the community's
+   demand, runs a monthly energy balance to get achievable renewable penetration and the
+   residual firm power, then compares diesel / nuclear / hybrid options on cost and CO₂.
 
 See `DESIGN.md` for the full rationale, including the data-calibration method and an
 honest account of what the ML does and doesn't add.
@@ -61,6 +65,7 @@ honest account of what the ML does and doesn't add.
 | `app.py` | Streamlit UI |
 | `physics.py` | constants + FAO-56 solar geometry (shared) |
 | `feasibility.py` | transparent scoring + verdict |
+| `energy_model.py` | hybrid PV+wind+battery balance + LCOE/CO2 economics |
 | `inference.py` | model loading, prediction, uncertainty, classification |
 | `openmeteo.py` | primary live Open-Meteo (ERA5) client, caching, fallback |
 | `nasa_power.py` | live NASA POWER client (cross-check) |
