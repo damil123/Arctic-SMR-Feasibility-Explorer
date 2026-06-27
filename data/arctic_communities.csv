@@ -1,6 +1,0 @@
-community,province,population,lat,lon,zone,primary_fuel,daily_kwh_demand,baseline_mw
-"Iqaluit, NU",Nunavut,7429,63.75,-68.51,High Arctic,Diesel,260015,10833.958
-"Inuvik, NT",Northwest Terr.,3243,68.36,-133.72,High Arctic,Diesel/Gas,113505,4729.375
-"Resolute, NU",Nunavut,208,74.69,-94.97,High Arctic,Diesel,7280,303.333
-"Yellowknife, NT",Northwest Terr.,20340,62.45,-114.37,Subarctic,Hydro/Diesel,711900,29662.5
-"Whitehorse, YT",Yukon,28201,60.72,-135.05,Subarctic,Hydro/Diesel,987035,41126.458

@@ -4,6 +4,6 @@ __pycache__/
 .ipynb_checkpoints/
 venv/
 env/
-node_modules/
-claude.md
+dashboard/cache/
+*.fuse_hidden*
 ~$*

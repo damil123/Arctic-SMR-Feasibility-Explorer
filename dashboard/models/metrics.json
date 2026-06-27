@@ -1,0 +1,42 @@
+{
+  "surrogate": {
+    "solar": {
+      "r2": 0.9977,
+      "mae": 0.1069
+    },
+    "wind": {
+      "r2": 0.8546,
+      "mae": 0.3036
+    },
+    "temp": {
+      "r2": 0.9944,
+      "mae": 1.1499
+    }
+  },
+  "classifier": {
+    "accuracy": 1.0,
+    "f1_macro": 1.0,
+    "class_counts": {
+      "strong": 342,
+      "conditional": 90
+    },
+    "classes": [
+      "conditional",
+      "strong"
+    ]
+  },
+  "features_surrogate": [
+    "lat",
+    "lon",
+    "sin_month",
+    "cos_month"
+  ],
+  "features_classifier": [
+    "lat",
+    "annual_solar",
+    "annual_wind",
+    "annual_temp",
+    "winter_temp",
+    "peak_rers"
+  ]
+}
